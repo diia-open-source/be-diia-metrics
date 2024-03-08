@@ -1,0 +1,81 @@
+{
+    "name": "@diia-inhouse/diia-metrics",
+    "version": "3.6.0",
+    "description": "package to export prometheus metrics",
+    "main": "dist/index.js",
+    "types": "dist/types/index.d.ts",
+    "repository": "https://github.com/diia-open-source/be-diia-metrics.git",
+    "author": "Diia",
+    "license": "SEE LICENSE IN LICENSE.md",
+    "files": [
+        "dist"
+    ],
+    "engines": {
+        "node": ">=18"
+    },
+    "scripts": {
+        "prebuild": "rimraf dist",
+        "build": "tsc",
+        "prepare": "ts-patch install -s && npm run build",
+        "semantic-release": "semantic-release",
+        "lint": "eslint --ext .ts . && prettier --check .",
+        "lint-fix": "eslint '*/**/*.{js,ts}' --fix && prettier --write .",
+        "lint:lockfile": "lockfile-lint --path package-lock.json --allowed-hosts registry.npmjs.org --validate-https",
+        "test": "jest",
+        "test:unit": "npm run test --selectProjects unit --",
+        "test:coverage": "npm run test --coverage",
+        "format": "prettier --write .",
+        "find-circulars": "madge --circular --extensions ts ./"
+    },
+    "resolutions": {
+        "@babel/traverse": "7.23.2"
+    },
+    "dependencies": {
+        "prom-client": "14.2.0"
+    },
+    "devDependencies": {
+        "@diia-inhouse/configs": "^1.27.1",
+        "@diia-inhouse/crypto": "^1.7.0",
+        "@diia-inhouse/diia-logger": "^2.9.0",
+        "@diia-inhouse/errors": "^1.5.0",
+        "@diia-inhouse/eslint-config": "^3.5.0",
+        "@diia-inhouse/test": "^5.1.1",
+        "@diia-inhouse/types": "^5.0.1",
+        "@diia-inhouse/utils": "^2.36.0",
+        "eslint": "8.53.0",
+        "nock": "13.3.1",
+        "type-fest": "4.3.1"
+    },
+    "release": {
+        "extends": "@diia-inhouse/configs/dist/semantic-release/package",
+        "branches": [
+            "main"
+        ]
+    },
+    "commitlint": {
+        "extends": "@diia-inhouse/configs/dist/commitlint"
+    },
+    "eslintConfig": {
+        "extends": "@diia-inhouse/eslint-config",
+        "overrides": [
+            {
+                "files": [
+                    "*.ts"
+                ],
+                "parserOptions": {
+                    "project": [
+                        "./tsconfig.json",
+                        "./tests/tsconfig.json"
+                    ]
+                }
+            }
+        ]
+    },
+    "prettier": "@diia-inhouse/eslint-config/prettier",
+    "madge": {
+        "tsConfig": "./tsconfig.json"
+    },
+    "jest": {
+        "preset": "@diia-inhouse/configs/dist/jest"
+    }
+}
