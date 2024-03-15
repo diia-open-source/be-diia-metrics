@@ -26,7 +26,7 @@ This repository contains the package for metrics collection.
 Example:
 
 ```
-git clone https://github.com/diia-open-source/diia-metrics.git
+git clone https://github.com/diia-open-source/be-diia-metrics.git diia-metrics
 ```
 
 ---
