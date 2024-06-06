@@ -1,8 +1,8 @@
-import http from 'http'
+import * as http from 'node:http'
 
-import client from 'prom-client'
+import * as client from 'prom-client'
 
-import { HttpStatusCode, Logger, OnInit } from '@diia-inhouse/types'
+import { HttpStatusCode, Logger, OnDestroy, OnInit } from '@diia-inhouse/types'
 
 import {
     MetricsConfig,
@@ -29,7 +29,7 @@ export class Histogram<M extends Record<string, any>> {
             name,
             labelNames,
             buckets: buckets,
-            help: help ? help : name,
+            help: help || name,
         })
     }
 
@@ -72,7 +72,7 @@ export class Counter<M extends Record<string, any>> {
         this.promCounter = new client.Counter({
             name,
             labelNames,
-            help: help ? help : name,
+            help: help || name,
         })
     }
 
@@ -102,7 +102,7 @@ export class Timer<M extends Record<string, any>> {
         this.promTimer = new client.Gauge({
             name,
             labelNames,
-            help: help ? help : name,
+            help: help || name,
         })
     }
 
@@ -121,8 +121,10 @@ export class Timer<M extends Record<string, any>> {
     }
 }
 
-export class MetricsService implements OnInit {
+export class MetricsService implements OnInit, OnDestroy {
     private registry = client.register
+
+    private server: http.Server | undefined
 
     totalRequestMetric = new Counter<TotalRequestsLabelsMap>('requests_total', totalRequestsAllowedFields, 'Total requests made by service')
 
@@ -170,8 +172,18 @@ export class MetricsService implements OnInit {
         await this.startServer()
     }
 
+    async onDestroy(): Promise<void> {
+        return await new Promise((resolve, reject) => {
+            if (!this.server) {
+                return resolve()
+            }
+
+            this.server.close((err) => (err ? reject(err) : resolve()))
+        })
+    }
+
     async startServer(): Promise<void> {
-        const server = http.createServer(async (_req, res) => {
+        this.server = http.createServer(async (_req, res) => {
             try {
                 let metrics = await this.registry.metrics()
 
@@ -188,7 +200,7 @@ export class MetricsService implements OnInit {
         })
 
         return await new Promise((resolve: () => void) => {
-            server.listen(this.metricsConfig.port ?? 3030, () => {
+            this.server!.listen(this.metricsConfig.port ?? 3030, () => {
                 resolve()
             })
         })

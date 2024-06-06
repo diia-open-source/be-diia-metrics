@@ -1,5 +1,5 @@
-jest.mock('http', () => {
-    const actualModule = jest.requireActual('http')
+jest.mock('node:http', () => {
+    const actualModule = jest.requireActual('node:http')
 
     return {
         ...actualModule,
@@ -13,7 +13,7 @@ jest.mock('../../../src/utils/index', () => ({
     validateTotalRequestsLabels: jest.fn(),
 }))
 
-import * as http from 'http'
+import * as http from 'node:http'
 
 import DiiaLogger from '@diia-inhouse/diia-logger'
 import { mockInstance } from '@diia-inhouse/test'

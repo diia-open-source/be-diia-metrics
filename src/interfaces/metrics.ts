@@ -33,6 +33,6 @@ export type TotalRequestsLabelsMap = TotalRequestsLabelsMapConcrete
 
 export const totalRequestsAllowedFields = <(keyof TotalRequestsLabelsMap)[]>Object.keys(new TotalRequestsLabelsMapConcrete())
 
-export const requestHistogramDefaultBuckets = [0.01, 0.05, 0.1, 0.2, 0.5, 0.7, 1, 5, 10]
+export const requestHistogramDefaultBuckets = [0.001, 0.005, 0.01, 0.05, 0.1, 0.2, 0.5, 0.7, 1, 5, 10, 15, 20, 25, 30, 35, 40, 50, 60]
 
-export const responseHistogramDefaultBuckets = [0.01, 0.05, 0.1, 0.2, 0.5, 0.7, 1, 5, 10]
+export const responseHistogramDefaultBuckets = [0.001, 0.005, 0.01, 0.05, 0.1, 0.2, 0.5, 0.7, 1, 5, 10, 15, 20, 25, 30, 35, 40, 50, 60]

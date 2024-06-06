@@ -1,4 +1,4 @@
-import http from 'http'
+import * as http from 'node:http'
 
 import { TotalRequestsLabelsMap } from 'src/interfaces'
 
@@ -9,13 +9,13 @@ export function validateTotalRequestsLabels(rawLabels: TotalRequestsLabelsMap): 
     if (errorType === undefined) {
         delete labels.errorType
     } else {
-        labels.errorType = rawLabels.errorType
+        labels.errorType = errorType
     }
 
-    if (isNaN(Number(rawLabels.statusCode))) {
+    if (Number.isNaN(Number(statusCode))) {
         delete labels.statusCode
     } else {
-        labels.statusCode = rawLabels.statusCode
+        labels.statusCode = statusCode
     }
 
     return labels

@@ -1,3 +1,4 @@
+/* eslint-disable unicorn/no-useless-undefined */
 import * as client from 'prom-client'
 
 import { Histogram } from '../../../src/services'
