@@ -2,14 +2,20 @@ import * as http from 'node:http'
 
 import { TotalRequestsLabelsMap } from 'src/interfaces'
 
-export function validateTotalRequestsLabels(rawLabels: TotalRequestsLabelsMap): TotalRequestsLabelsMap {
+import { ErrorType } from '@diia-inhouse/errors'
+
+export function validateTotalRequestsLabels(rawLabels: Partial<TotalRequestsLabelsMap>): Partial<TotalRequestsLabelsMap> {
     const { errorType, statusCode, ...restlabels } = rawLabels
-    const labels: TotalRequestsLabelsMap = restlabels
+    const labels: Partial<TotalRequestsLabelsMap> = { ...restlabels }
+
+    const isErrorTypeValid = errorType && Object.values(ErrorType).includes(errorType)
 
     if (errorType === undefined) {
         delete labels.errorType
-    } else {
+    } else if (isErrorTypeValid) {
         labels.errorType = errorType
+    } else {
+        labels.errorType = ErrorType.Unoperated
     }
 
     if (Number.isNaN(Number(statusCode))) {

@@ -1,16 +1,22 @@
-export interface MoleculerScraperOptions {
+export interface ScraperOptions {
     disabled?: boolean
+    name: string
+    port: number
     host?: string
-    port?: number
     path?: string
 }
 
 export interface MetricsConfig {
     disabled?: boolean
     port?: number
-    moleculer?: MoleculerScraperOptions
+    scrapers?: ScraperOptions[]
     disableDefaultMetrics?: boolean
     defaultLabels?: Record<string, string>
     requestTimingBuckets?: number[]
     responseTimingBuckets?: number[]
+    pushGateway: {
+        isEnabled: boolean
+        url: string
+        intervalMs?: number
+    }
 }

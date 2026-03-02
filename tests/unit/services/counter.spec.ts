@@ -3,21 +3,21 @@ import * as client from 'prom-client'
 
 import { Counter } from '../../../src/services'
 
-jest.mock('prom-client', () => ({
+vi.mock('prom-client', () => ({
     register: {
-        getSingleMetric: jest.fn(),
+        getSingleMetric: vi.fn(),
     },
-    Counter: jest.fn(),
+    Counter: vi.fn(),
 }))
 
 describe('Counter', () => {
     afterEach(() => {
-        jest.clearAllMocks()
+        vi.clearAllMocks()
     })
 
     it('should return labels', () => {
         const counter = new Counter('testCounter')
-        const expectedLabels = ['label1', 'label2']
+        const expectedLabels = { label1: 'value1', label2: 2 }
 
         expect(counter.validateLabels(expectedLabels)).toEqual(expectedLabels)
     })
@@ -25,12 +25,12 @@ describe('Counter', () => {
     it('should call increment', () => {
         const existingCounter = new client.Counter({ name: 'testCounter', help: 'help', collect: undefined })
 
-        jest.spyOn(client.register, 'getSingleMetric').mockReturnValue(existingCounter)
-        existingCounter.inc = jest.fn()
+        vi.spyOn(client.register, 'getSingleMetric').mockReturnValue(existingCounter)
+        existingCounter.inc = vi.fn()
 
         const counter = new Counter('testCounter')
 
-        const labels = ['label3', 'label4']
+        const labels = { label3: 'value3', label4: 4 }
         const val = 100
 
         counter.increment(labels, val)
@@ -41,7 +41,7 @@ describe('Counter', () => {
     it('should reuse existing counter if it exists', () => {
         const existingCounter = new client.Counter({ name: 'name', help: 'help', collect: undefined })
 
-        jest.spyOn(client.register, 'getSingleMetric').mockReturnValue(existingCounter)
+        vi.spyOn(client.register, 'getSingleMetric').mockReturnValue(existingCounter)
 
         new Counter('testCounter')
 
@@ -53,7 +53,7 @@ describe('Counter', () => {
     })
 
     it('should create a new counter if it does not exist', () => {
-        jest.spyOn(client.register, 'getSingleMetric').mockReturnValue(undefined)
+        vi.spyOn(client.register, 'getSingleMetric').mockReturnValue(undefined)
 
         new Counter('testCounter')
 
@@ -65,7 +65,7 @@ describe('Counter', () => {
     })
 
     it('should create a new counter with custom label names and help message', () => {
-        jest.spyOn(client.register, 'getSingleMetric').mockReturnValue(undefined)
+        vi.spyOn(client.register, 'getSingleMetric').mockReturnValue(undefined)
 
         new Counter('customCounter', ['label1', 'label2'], 'Custom help message')
 

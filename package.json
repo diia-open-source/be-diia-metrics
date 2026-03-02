@@ -1,6 +1,6 @@
 {
     "name": "@diia-inhouse/diia-metrics",
-    "version": "3.12.0",
+    "version": "6.4.0",
     "description": "package to export prometheus metrics",
     "main": "dist/index.js",
     "types": "dist/types/index.d.ts",
@@ -11,48 +11,52 @@
         "dist"
     ],
     "engines": {
-        "node": ">=18"
+        "node": ">=22"
     },
     "scripts": {
         "prebuild": "rimraf dist",
         "build": "tsc",
+        "build-watch": "tsc --watch",
         "prepare": "ts-patch install -s && npm run build",
         "semantic-release": "semantic-release",
-        "lint": "eslint --ext .ts . && prettier --check .",
-        "lint-fix": "eslint '*/**/*.{js,ts}' --fix && prettier --write .",
+        "lint": "eslint . && prettier --check .",
+        "lint-fix": "eslint . --fix && prettier --write .",
         "lint:lockfile": "lockfile-lint --path package-lock.json --allowed-hosts registry.npmjs.org --validate-https",
-        "test": "jest",
-        "test:unit": "npm run test --selectProjects unit --",
-        "test:coverage": "npm run test --coverage",
-        "format": "prettier --write .",
+        "test": "vitest run",
+        "test:watch": "vitest watch",
         "find-circulars": "madge --circular --extensions ts ./"
     },
     "resolutions": {
         "@babel/traverse": "7.23.2"
     },
     "dependencies": {
-        "prom-client": "15.1.2"
+        "prom-client": "15.1.3"
     },
     "peerDependencies": {
         "@diia-inhouse/errors": ">=1.10.0",
         "@diia-inhouse/types": ">=6.30.0"
     },
     "devDependencies": {
-        "@diia-inhouse/configs": "1.32.0",
-        "@diia-inhouse/diia-logger": "3.0.0",
-        "@diia-inhouse/eslint-config": "5.1.0",
-        "@diia-inhouse/test": "6.3.1",
-        "@types/node": "20.14.5",
-        "eslint": "8.57.0",
-        "eslint-plugin-prettier": "5.1.3",
-        "lockfile-lint": "4.13.2",
-        "madge": "7.0.0",
-        "nock": "13.5.4",
-        "prettier": "3.3.2",
-        "rimraf": "5.0.7",
-        "semantic-release": "21.1.2",
-        "type-fest": "4.3.1",
-        "typescript": "5.4.5"
+        "@diia-inhouse/configs": "6.1.1",
+        "@diia-inhouse/diia-logger": "3.16.0",
+        "@diia-inhouse/eslint-config": "8.2.4",
+        "@diia-inhouse/test": "7.2.0",
+        "@types/node": "25.3.3",
+        "@vitest/coverage-v8": "4.0.18",
+        "@vitest/ui": "4.0.18",
+        "eslint": "9.36.0",
+        "eslint-plugin-prettier": "5.5.4",
+        "lockfile-lint": "4.14.1",
+        "madge": "8.0.0",
+        "nock": "14.0.10",
+        "prettier": "3.6.2",
+        "rimraf": "6.0.1",
+        "semantic-release": "24.2.9",
+        "type-fest": "5.0.1",
+        "typescript": "5.9.3",
+        "vite-tsconfig-paths": "6.1.1",
+        "vitest": "4.0.18",
+        "vitest-mock-extended": "3.1.0"
     },
     "release": {
         "extends": "@diia-inhouse/configs/dist/semantic-release/package",
@@ -63,27 +67,8 @@
     "commitlint": {
         "extends": "@diia-inhouse/configs/dist/commitlint"
     },
-    "eslintConfig": {
-        "extends": "@diia-inhouse/eslint-config",
-        "overrides": [
-            {
-                "files": [
-                    "*.ts"
-                ],
-                "parserOptions": {
-                    "project": [
-                        "./tsconfig.json",
-                        "./tests/tsconfig.json"
-                    ]
-                }
-            }
-        ]
-    },
     "prettier": "@diia-inhouse/eslint-config/prettier",
     "madge": {
         "tsConfig": "./tsconfig.json"
-    },
-    "jest": {
-        "preset": "@diia-inhouse/configs/dist/jest"
     }
 }

@@ -1,18 +1,19 @@
 /* eslint-disable unicorn/no-useless-undefined */
 import * as client from 'prom-client'
+import { afterEach, describe, expect, it, vi } from 'vitest'
 
 import { Timer } from '../../../src/services'
 
-jest.mock('prom-client', () => ({
+vi.mock('prom-client', () => ({
     register: {
-        getSingleMetric: jest.fn(),
+        getSingleMetric: vi.fn(),
     },
-    Gauge: jest.fn(),
+    Gauge: vi.fn(),
 }))
 
 describe('Timer', () => {
     afterEach(() => {
-        jest.clearAllMocks()
+        vi.clearAllMocks()
     })
 
     it('should store setTimer', async () => {
@@ -22,20 +23,22 @@ describe('Timer', () => {
             help: 'help',
         })
 
-        metric.set = jest.fn()
+        metric.set = vi.fn()
 
-        jest.spyOn(client.register, 'getSingleMetric').mockReturnValue(metric)
+        vi.spyOn(client.register, 'getSingleMetric').mockReturnValue(metric)
 
         const timer = new Timer('testMetric')
-        const labels = ['label3', 'label4']
+        const labels = { label3: 'value3', label4: 4 }
 
-        timer.setTimer(labels, BigInt(10))
+        // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+        // @ts-expect-error
+        timer.setTimer(labels, 10n)
 
         expect(metric.set).toHaveBeenCalledWith(labels, expect.any(Number))
     })
 
     it('should create a new metric if it does not exist', () => {
-        jest.spyOn(client.register, 'getSingleMetric').mockReturnValue(undefined)
+        vi.spyOn(client.register, 'getSingleMetric').mockReturnValue(undefined)
 
         new Timer('testMetric')
 
@@ -47,7 +50,7 @@ describe('Timer', () => {
     })
 
     it('should create a new metric with custom label names and help message', () => {
-        jest.spyOn(client.register, 'getSingleMetric').mockReturnValue(undefined)
+        vi.spyOn(client.register, 'getSingleMetric').mockReturnValue(undefined)
 
         new Timer('customMetric', ['label1', 'label2'], 'Custom help message')
 
@@ -60,7 +63,7 @@ describe('Timer', () => {
 
     it('should return labels', () => {
         const timer = new Timer('testMetric')
-        const expectedLabels = ['label1', 'label2']
+        const expectedLabels = { label1: 'value1', label2: 2 }
 
         expect(timer.validateLabels(expectedLabels)).toEqual(expectedLabels)
     })

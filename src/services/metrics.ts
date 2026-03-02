@@ -2,10 +2,15 @@ import * as http from 'node:http'
 
 import * as client from 'prom-client'
 
-import { HttpStatusCode, Logger, OnDestroy, OnInit } from '@diia-inhouse/types'
+import { DurationMs, HttpStatusCode, Logger, OnDestroy, OnInit } from '@diia-inhouse/types'
 
 import {
+    CustomLabelsValidate,
+    KeysOfUnion,
+    LabelsType,
+    MetricOptions,
     MetricsConfig,
+    ScraperOptions,
     TotalRequestsLabelsMap,
     requestHistogramDefaultBuckets,
     responseHistogramDefaultBuckets,
@@ -13,11 +18,16 @@ import {
 } from '../interfaces/index'
 import { makeRequest, validateTotalRequestsLabels } from '../utils/index'
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-export class Histogram<M extends Record<string, any>> {
+export class Histogram<M extends LabelsType<M>> {
     private readonly promHistogram: client.Histogram
 
-    constructor(name: string, labelNames: Extract<keyof M, string>[] = [], help?: string, buckets?: number[]) {
+    constructor(
+        name: string,
+        labelNames: Extract<KeysOfUnion<M>, string>[] = [],
+        help?: string,
+        buckets?: number[],
+        private readonly customLabelsValidate?: CustomLabelsValidate<M>,
+    ) {
         const existedMetric = client.register.getSingleMetric(name)
         if (existedMetric && existedMetric instanceof client.Histogram) {
             this.promHistogram = existedMetric
@@ -34,6 +44,10 @@ export class Histogram<M extends Record<string, any>> {
     }
 
     validateLabels(rawLabels: Partial<M>): Partial<M> {
+        if (this.customLabelsValidate) {
+            return this.customLabelsValidate(rawLabels)
+        }
+
         return rawLabels
     }
 
@@ -43,11 +57,26 @@ export class Histogram<M extends Record<string, any>> {
         this.promHistogram.observe(labels, value)
     }
 
+    /**
+     * Records the duration of an operation in seconds.
+     *
+     * @param {Partial<M>} rawLabels - An object containing the labels for the metric.
+     * @param {bigint} ts - The time duration (delta) in nanoseconds.
+     * Expected to be the result of `end - start` using `process.hrtime.bigint()`.
+     *
+     * @example
+     * const start = process.hrtime.bigint();
+     * // ... perform operation ...
+     * const delta = process.hrtime.bigint() - start;
+     * metrics.observeSeconds({ status: 'successful', mechanism: 'rabbitmq' }, delta);
+     *
+     * @returns {void}
+     */
     observeSeconds(rawLabels: Partial<M>, ts: bigint): void {
         const labels = this.validateLabels(rawLabels)
-        const secondsFromNanoseconds = ts / BigInt(Math.pow(10, 9))
+        const seconds = Number(ts / 1_000_000n) / 1000
 
-        this.promHistogram.observe(labels, Number(secondsFromNanoseconds))
+        this.promHistogram.observe(labels, Number(seconds))
     }
 
     recordTimer(rawLabels: Partial<M>): (labels?: Partial<M>) => number {
@@ -57,26 +86,50 @@ export class Histogram<M extends Record<string, any>> {
     }
 }
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-export class Counter<M extends Record<string, any>> {
+export class Counter<M extends LabelsType<M>> {
     private readonly promCounter: client.Counter
 
-    constructor(name: string, labelNames: Extract<keyof M, string>[] = [], help?: string) {
-        const existedMetric = client.register.getSingleMetric(name)
+    constructor(
+        name: string,
+        labelNames: Extract<KeysOfUnion<M>, string>[] = [],
+        help?: string,
+        options?: MetricOptions<M>,
+        private readonly customLabelsValidate?: CustomLabelsValidate<M>,
+    ) {
+        const { onCollect, registry: customRegistry } = options || {}
+        const registry = customRegistry || client.register
+        const existedMetric = registry.getSingleMetric(name)
         if (existedMetric && existedMetric instanceof client.Counter) {
             this.promCounter = existedMetric
 
             return
         }
 
+        const validateLabels = this.validateLabels.bind(this)
+
         this.promCounter = new client.Counter({
             name,
             labelNames,
             help: help || name,
+            ...(customRegistry && {
+                registers: [customRegistry],
+            }),
+            ...(onCollect && {
+                collect(): void {
+                    const { labels: rawLabels, value } = onCollect()
+                    const labels = validateLabels(rawLabels)
+
+                    this.inc(labels, value)
+                },
+            }),
         })
     }
 
     validateLabels(rawLabels: Partial<M>): Partial<M> {
+        if (this.customLabelsValidate) {
+            return this.customLabelsValidate(rawLabels)
+        }
+
         return rawLabels
     }
 
@@ -87,11 +140,15 @@ export class Counter<M extends Record<string, any>> {
     }
 }
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-export class Timer<M extends Record<string, any>> {
+export class Timer<M extends LabelsType<M>> {
     private readonly promTimer: client.Gauge
 
-    constructor(name: string, labelNames: Extract<keyof M, string>[] = [], help?: string) {
+    constructor(
+        name: string,
+        labelNames: Extract<KeysOfUnion<M>, string>[] = [],
+        help?: string,
+        private readonly customLabelsValidate?: CustomLabelsValidate<M>,
+    ) {
         const existedMetric = client.register.getSingleMetric(name)
         if (existedMetric && existedMetric instanceof client.Gauge) {
             this.promTimer = existedMetric
@@ -107,6 +164,10 @@ export class Timer<M extends Record<string, any>> {
     }
 
     validateLabels(rawLabels: Partial<M>): Partial<M> {
+        if (this.customLabelsValidate) {
+            return this.customLabelsValidate(rawLabels)
+        }
+
         return rawLabels
     }
 
@@ -121,10 +182,62 @@ export class Timer<M extends Record<string, any>> {
     }
 }
 
-export class MetricsService implements OnInit, OnDestroy {
-    private registry = client.register
+export class Observer<M extends LabelsType<M>> {
+    private readonly promObserver: client.Gauge
 
-    private server: http.Server | undefined
+    constructor(
+        name: string,
+        labelNames: Extract<KeysOfUnion<M>, string>[] = [],
+        help?: string,
+        options?: MetricOptions<M>,
+        private readonly customLabelsValidate?: CustomLabelsValidate<M>,
+    ) {
+        const { onCollect, registry: customRegistry } = options || {}
+        const registry = customRegistry || client.register
+        const existedMetric = registry.getSingleMetric(name)
+        if (existedMetric && existedMetric instanceof client.Gauge) {
+            this.promObserver = existedMetric
+
+            return
+        }
+
+        const validateLabels = this.validateLabels.bind(this)
+
+        this.promObserver = new client.Gauge({
+            name,
+            labelNames,
+            help: help || name,
+            ...(customRegistry && {
+                registers: [customRegistry],
+            }),
+            ...(onCollect && {
+                collect(): void {
+                    const { labels: rawLabels, value } = onCollect()
+                    const labels = validateLabels(rawLabels)
+
+                    this.set(labels, value)
+                },
+            }),
+        })
+    }
+
+    validateLabels(rawLabels: Partial<M>): Partial<M> {
+        if (this.customLabelsValidate) {
+            return this.customLabelsValidate(rawLabels)
+        }
+
+        return rawLabels
+    }
+
+    observe(rawLabels: Partial<M>, value: number): void {
+        const labels = this.validateLabels(rawLabels)
+
+        this.promObserver.set(labels, value)
+    }
+}
+
+export class MetricsService implements OnInit, OnDestroy {
+    pushGatewayRegistry = new client.Registry()
 
     totalRequestMetric = new Counter<TotalRequestsLabelsMap>('requests_total', totalRequestsAllowedFields, 'Total requests made by service')
 
@@ -132,14 +245,36 @@ export class MetricsService implements OnInit, OnDestroy {
 
     responseTotalTimerMetric: Histogram<TotalRequestsLabelsMap>
 
+    private registry = client.register
+
+    private server?: http.Server
+
+    private pushGateway?: client.Pushgateway<client.PrometheusContentType>
+
     constructor(
         private readonly logger: Logger,
         private readonly metricsConfig: MetricsConfig,
-        private readonly isMoleculerEnabled = false,
+        private readonly systemServiceName: string,
     ) {
+        if (this.metricsConfig.pushGateway.isEnabled) {
+            this.pushGateway = new client.Pushgateway(this.metricsConfig.pushGateway.url, undefined, this.pushGatewayRegistry)
+        }
+
         if (this.metricsConfig.disableDefaultMetrics) {
-            this.totalTimerMetric = new Histogram<TotalRequestsLabelsMap>('dummy')
-            this.responseTotalTimerMetric = new Histogram<TotalRequestsLabelsMap>('dummy1')
+            this.totalTimerMetric = new Histogram<TotalRequestsLabelsMap>(
+                'dummy',
+                totalRequestsAllowedFields,
+                'Dummy',
+                [],
+                validateTotalRequestsLabels,
+            )
+            this.responseTotalTimerMetric = new Histogram<TotalRequestsLabelsMap>(
+                'dummy1',
+                totalRequestsAllowedFields,
+                'Dummy1',
+                [],
+                validateTotalRequestsLabels,
+            )
 
             return
         }
@@ -152,16 +287,15 @@ export class MetricsService implements OnInit, OnDestroy {
             totalRequestsAllowedFields,
             'Request latency in seconds',
             this.metricsConfig.requestTimingBuckets || requestHistogramDefaultBuckets,
+            validateTotalRequestsLabels,
         )
         this.responseTotalTimerMetric = new Histogram<TotalRequestsLabelsMap>(
             'response_latency_seconds',
             totalRequestsAllowedFields,
             'Response latency in seconds',
             this.metricsConfig.responseTimingBuckets || responseHistogramDefaultBuckets,
+            validateTotalRequestsLabels,
         )
-        this.totalRequestMetric.validateLabels = validateTotalRequestsLabels
-        this.responseTotalTimerMetric.validateLabels = validateTotalRequestsLabels
-        this.totalTimerMetric.validateLabels = validateTotalRequestsLabels
     }
 
     async onInit(): Promise<void> {
@@ -170,9 +304,23 @@ export class MetricsService implements OnInit, OnDestroy {
         }
 
         await this.startServer()
+        if (this.pushGateway) {
+            setInterval(
+                async () => {
+                    try {
+                        await this.push()
+                    } catch (err) {
+                        this.logger.error('Failed to push metrics', { err })
+                    }
+                },
+                this.metricsConfig.pushGateway.intervalMs ?? DurationMs.Second * 30,
+            )
+        }
     }
 
     async onDestroy(): Promise<void> {
+        await this.push()
+
         return await new Promise((resolve, reject) => {
             if (!this.server) {
                 return resolve()
@@ -187,8 +335,13 @@ export class MetricsService implements OnInit, OnDestroy {
             try {
                 let metrics = await this.registry.metrics()
 
-                if (this.isMoleculerEnabled && !this.metricsConfig.moleculer?.disabled) {
-                    metrics += await this.pollMoleculer()
+                res.setHeader('Content-Type', this.registry.contentType)
+
+                if (this.metricsConfig.scrapers) {
+                    const enabledScrapers = this.metricsConfig.scrapers.filter((scraper) => !scraper.disabled)
+                    const scraperResults = await Promise.all(enabledScrapers.map((scraper) => this.pollService(scraper)))
+
+                    metrics += scraperResults.join('')
                 }
 
                 res.end(Buffer.from(metrics, 'utf8'))
@@ -206,16 +359,20 @@ export class MetricsService implements OnInit, OnDestroy {
         })
     }
 
-    private async pollMoleculer(): Promise<string> {
+    private async push(): Promise<void> {
+        if (!this.pushGateway) {
+            return
+        }
+
+        await this.pushGateway.push({ jobName: 'pods', groupings: { app: this.systemServiceName } })
+    }
+
+    private async pollService(scraper: ScraperOptions): Promise<string> {
         let response = ''
         try {
-            const { moleculer } = this.metricsConfig
-
-            response = await makeRequest(
-                `http://${moleculer?.host ?? '127.0.0.1'}:${moleculer?.port ?? 3031}${moleculer?.path ?? '/metrics'}`,
-            )
+            response = await makeRequest(`http://${scraper.host ?? '127.0.0.1'}:${scraper.port}${scraper.path ?? '/metrics'}`)
         } catch (err) {
-            this.logger.error('Failed to get moleculer metrics', { err })
+            this.logger.error(`Failed to get ${scraper.name} metrics`, { err })
         }
 
         return response

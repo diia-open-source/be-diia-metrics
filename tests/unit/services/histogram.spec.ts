@@ -1,35 +1,52 @@
 /* eslint-disable unicorn/no-useless-undefined */
 import * as client from 'prom-client'
 
+import { ErrorType } from '@diia-inhouse/errors'
+
+import { TotalRequestsLabelsMap } from '@src/interfaces'
+
+import { customErrorTypeValidate } from '@tests/utils/customLabelsValidate'
+
 import { Histogram } from '../../../src/services'
 
-jest.mock('prom-client', () => ({
+vi.mock('prom-client', () => ({
     register: {
-        getSingleMetric: jest.fn(),
+        getSingleMetric: vi.fn(),
     },
-    Histogram: jest.fn(),
+    Histogram: vi.fn(),
 }))
 
 describe('Histogram', () => {
     afterEach(() => {
-        jest.clearAllMocks()
+        vi.clearAllMocks()
     })
 
     it('should return labels', () => {
         const histogram = new Histogram('testHistogram')
-        const expectedLabels = ['label1', 'label2']
+        const expectedLabels = { label1: 'value1', label2: 2 }
 
         expect(histogram.validateLabels(expectedLabels)).toEqual(expectedLabels)
+    })
+    it('should return labels if customLabelsValidate is specified', () => {
+        // Arrange
+        const histogram = new Histogram('testHistogram', [], '', [], customErrorTypeValidate)
+        const labels = { label1: 'value1', label2: 2, errorType: 'REQUEST_REJECTED' } as unknown as TotalRequestsLabelsMap
+
+        // Act
+        const result = histogram.validateLabels(labels)
+
+        // Assert
+        expect(result).toEqual({ ...labels, errorType: ErrorType.Unoperated })
     })
 
     it('should call observe', () => {
         const existingHistogram = new client.Histogram({ name: 'testHistogram', help: 'help', collect: undefined })
 
-        jest.spyOn(client.register, 'getSingleMetric').mockReturnValue(existingHistogram)
-        const labels = ['label3', 'label4']
+        vi.spyOn(client.register, 'getSingleMetric').mockReturnValue(existingHistogram)
+        const labels = { label3: 'value3', label4: 4 }
         const val = 100
 
-        existingHistogram.observe = jest.fn()
+        existingHistogram.observe = vi.fn()
         const histogram = new Histogram('testHistogram')
 
         histogram.observe(labels, val)
@@ -40,25 +57,25 @@ describe('Histogram', () => {
     it('should call observeSeconds', () => {
         const existingHistogram = new client.Histogram({ name: 'testHistogram', help: 'help', collect: undefined })
 
-        jest.spyOn(client.register, 'getSingleMetric').mockReturnValue(existingHistogram)
-        const labels = ['label3', 'label4']
-        const val = BigInt(10000)
+        vi.spyOn(client.register, 'getSingleMetric').mockReturnValue(existingHistogram)
+        const labels = { label3: 'value3', label4: 4 }
+        const val = 10000000n
 
-        existingHistogram.observe = jest.fn()
+        existingHistogram.observe = vi.fn()
         const histogram = new Histogram('testHistogram')
 
         histogram.observeSeconds(labels, val)
 
-        expect(existingHistogram.observe).toHaveBeenCalledWith(labels, expect.any(Number))
+        expect(existingHistogram.observe).toHaveBeenCalledWith(labels, 0.01)
     })
 
     it('should call recordTimer', () => {
         const existingHistogram = new client.Histogram({ name: 'testHistogram', help: 'help', collect: undefined })
 
-        jest.spyOn(client.register, 'getSingleMetric').mockReturnValue(existingHistogram)
-        const labels = ['label3', 'label4']
+        vi.spyOn(client.register, 'getSingleMetric').mockReturnValue(existingHistogram)
+        const labels = { label3: 'value3', label4: 4 }
 
-        existingHistogram.startTimer = jest.fn()
+        existingHistogram.startTimer = vi.fn()
         const histogram = new Histogram('testHistogram')
 
         histogram.recordTimer(labels)
@@ -70,7 +87,7 @@ describe('Histogram', () => {
         const props = { name: 'name', help: 'help' }
         const existingHistogram = new client.Histogram(props)
 
-        jest.spyOn(client.register, 'getSingleMetric').mockReturnValue(existingHistogram)
+        vi.spyOn(client.register, 'getSingleMetric').mockReturnValue(existingHistogram)
 
         new Histogram('testHistogram')
 
@@ -78,7 +95,7 @@ describe('Histogram', () => {
     })
 
     it('should create a new histogram if it does not exist', () => {
-        jest.spyOn(client.register, 'getSingleMetric').mockReturnValue(undefined)
+        vi.spyOn(client.register, 'getSingleMetric').mockReturnValue(undefined)
 
         new Histogram('testHistogram')
 
@@ -92,7 +109,7 @@ describe('Histogram', () => {
     it('should create a new histogram with custom label names, help message, and buckets', () => {
         const buckets = [0.1, 0.5, 1, 2.5, 5]
 
-        jest.spyOn(client.register, 'getSingleMetric').mockReturnValue(undefined)
+        vi.spyOn(client.register, 'getSingleMetric').mockReturnValue(undefined)
 
         new Histogram('customHistogram', ['label1', 'label2'], 'Custom help message', buckets)
 
