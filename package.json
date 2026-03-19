@@ -1,6 +1,6 @@
 {
     "name": "@diia-inhouse/diia-metrics",
-    "version": "6.4.3",
+    "version": "6.4.4",
     "description": "package to export prometheus metrics",
     "main": "dist/index.js",
     "types": "dist/types/index.d.ts",
@@ -38,7 +38,7 @@
     },
     "devDependencies": {
         "@diia-inhouse/configs": "6.1.1",
-        "@diia-inhouse/diia-logger": "3.16.2",
+        "@diia-inhouse/diia-logger": "3.16.3",
         "@diia-inhouse/eslint-config": "8.4.0",
         "@diia-inhouse/test": "7.3.1",
         "@types/node": "25.3.3",
