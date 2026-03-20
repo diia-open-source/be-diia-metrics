@@ -35,6 +35,7 @@ const makeRequestMock = vi.mocked(makeRequest)
 
 vi.mock('prom-client', () => ({
     Counter: vi.fn(),
+    Gauge: vi.fn(),
     Histogram: vi.fn(),
     register: {
         metrics: vi.fn(),
