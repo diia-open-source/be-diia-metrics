@@ -1,10 +1,10 @@
 {
     "name": "@diia-inhouse/diia-metrics",
-    "version": "6.5.8",
+    "version": "6.5.9",
     "description": "package to export prometheus metrics",
     "main": "dist/index.js",
     "types": "dist/types/index.d.ts",
-    "repository": "https://github.com/diia-open-source/be-diia-metrics.git",
+    "repository": "https://github.com/diia-open-source/be-diia-metrics",
     "author": "Diia",
     "license": "SEE LICENSE IN LICENSE.md",
     "files": [
@@ -38,9 +38,9 @@
     },
     "devDependencies": {
         "@diia-inhouse/configs": "6.1.1",
-        "@diia-inhouse/diia-logger": "3.17.2",
+        "@diia-inhouse/diia-logger": "3.17.3",
         "@diia-inhouse/eslint-config": "8.8.0",
-        "@diia-inhouse/test": "7.3.8",
+        "@diia-inhouse/test": "7.3.10",
         "@types/node": "25.3.3",
         "@vitest/coverage-v8": "4.0.18",
         "@vitest/ui": "4.0.18",
