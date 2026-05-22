@@ -1,13 +1,12 @@
-/* eslint-disable unicorn/no-useless-undefined */
 import * as client from 'prom-client'
 
 import { Counter } from '../../../src/services'
 
 vi.mock('prom-client', () => ({
     register: {
-        getSingleMetric: vi.fn(),
+        getSingleMetric: vi.fn<() => void>(),
     },
-    Counter: vi.fn(),
+    Counter: vi.fn<() => void>(),
 }))
 
 describe('Counter', () => {
@@ -26,7 +25,7 @@ describe('Counter', () => {
         const existingCounter = new client.Counter({ name: 'testCounter', help: 'help', collect: undefined })
 
         vi.spyOn(client.register, 'getSingleMetric').mockReturnValue(existingCounter)
-        existingCounter.inc = vi.fn()
+        existingCounter.inc = vi.fn<() => void>()
 
         const counter = new Counter('testCounter')
 
@@ -43,7 +42,7 @@ describe('Counter', () => {
 
         vi.spyOn(client.register, 'getSingleMetric').mockReturnValue(existingCounter)
 
-        new Counter('testCounter')
+        void new Counter('testCounter')
 
         expect(client.Counter).not.toHaveBeenCalledWith({
             name: 'testCounter',
@@ -55,7 +54,7 @@ describe('Counter', () => {
     it('should create a new counter if it does not exist', () => {
         vi.spyOn(client.register, 'getSingleMetric').mockReturnValue(undefined)
 
-        new Counter('testCounter')
+        void new Counter('testCounter')
 
         expect(client.Counter).toHaveBeenCalledWith({
             name: 'testCounter',
@@ -67,7 +66,7 @@ describe('Counter', () => {
     it('should create a new counter with custom label names and help message', () => {
         vi.spyOn(client.register, 'getSingleMetric').mockReturnValue(undefined)
 
-        new Counter('customCounter', ['label1', 'label2'], 'Custom help message')
+        void new Counter('customCounter', ['label1', 'label2'], 'Custom help message')
 
         expect(client.Counter).toHaveBeenCalledWith({
             name: 'customCounter',

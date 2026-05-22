@@ -1,5 +1,5 @@
-export * from './eventLoopUtilizationObserver'
+export * from './eventLoopUtilizationObserver.js'
 
-export * from './metrics'
+export * from './metrics.js'
 
-export * from './observer'
+export * from './observer.js'

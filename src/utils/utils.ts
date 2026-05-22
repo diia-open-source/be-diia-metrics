@@ -1,8 +1,8 @@
 import * as http from 'node:http'
 
-import { TotalRequestsLabelsMap } from 'src/interfaces'
-
 import { ErrorType } from '@diia-inhouse/errors'
+
+import { TotalRequestsLabelsMap } from '../interfaces/index.js'
 
 export function validateTotalRequestsLabels(rawLabels: Partial<TotalRequestsLabelsMap>): Partial<TotalRequestsLabelsMap> {
     const { errorType, statusCode, ...restlabels } = rawLabels

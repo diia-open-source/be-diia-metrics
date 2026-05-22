@@ -1,4 +1,3 @@
-/* eslint-disable unicorn/no-useless-undefined */
 import * as client from 'prom-client'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 
@@ -6,9 +5,9 @@ import { Timer } from '../../../src/services'
 
 vi.mock('prom-client', () => ({
     register: {
-        getSingleMetric: vi.fn(),
+        getSingleMetric: vi.fn<() => void>(),
     },
-    Gauge: vi.fn(),
+    Gauge: vi.fn<() => void>(),
 }))
 
 describe('Timer', () => {
@@ -23,15 +22,13 @@ describe('Timer', () => {
             help: 'help',
         })
 
-        metric.set = vi.fn()
+        metric.set = vi.fn<() => void>()
 
         vi.spyOn(client.register, 'getSingleMetric').mockReturnValue(metric)
 
         const timer = new Timer('testMetric')
         const labels = { label3: 'value3', label4: 4 }
 
-        // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-        // @ts-expect-error
         timer.setTimer(labels, 10n)
 
         expect(metric.set).toHaveBeenCalledWith(labels, expect.any(Number))
@@ -40,7 +37,7 @@ describe('Timer', () => {
     it('should create a new metric if it does not exist', () => {
         vi.spyOn(client.register, 'getSingleMetric').mockReturnValue(undefined)
 
-        new Timer('testMetric')
+        void new Timer('testMetric')
 
         expect(client.Gauge).toHaveBeenCalledWith({
             name: 'testMetric',
@@ -52,7 +49,7 @@ describe('Timer', () => {
     it('should create a new metric with custom label names and help message', () => {
         vi.spyOn(client.register, 'getSingleMetric').mockReturnValue(undefined)
 
-        new Timer('customMetric', ['label1', 'label2'], 'Custom help message')
+        void new Timer('customMetric', ['label1', 'label2'], 'Custom help message')
 
         expect(client.Gauge).toHaveBeenCalledWith({
             name: 'customMetric',

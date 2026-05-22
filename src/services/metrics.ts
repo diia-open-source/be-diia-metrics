@@ -15,10 +15,10 @@ import {
     requestHistogramDefaultBuckets,
     responseHistogramDefaultBuckets,
     totalRequestsAllowedFields,
-} from '../interfaces/index'
-import { makeRequest, validateTotalRequestsLabels } from '../utils/index'
-import { eventLoopUtilizationObserver } from './eventLoopUtilizationObserver'
-import { Observer } from './observer'
+} from '../interfaces/index.js'
+import { makeRequest, validateTotalRequestsLabels } from '../utils/index.js'
+import { eventLoopUtilizationObserver } from './eventLoopUtilizationObserver.js'
+import { Observer } from './observer.js'
 
 export class Histogram<M extends LabelsType<M>> {
     private readonly promHistogram: client.Histogram
@@ -28,7 +28,7 @@ export class Histogram<M extends LabelsType<M>> {
         labelNames: Extract<KeysOfUnion<M>, string>[] = [],
         help?: string,
         buckets?: number[],
-        private readonly customLabelsValidate?: CustomLabelsValidate<M>,
+        private readonly customLabelsValidate: CustomLabelsValidate<M> | undefined = undefined,
     ) {
         const existedMetric = client.register.getSingleMetric(name)
         if (existedMetric && existedMetric instanceof client.Histogram) {
@@ -78,7 +78,7 @@ export class Histogram<M extends LabelsType<M>> {
         const labels = this.validateLabels(rawLabels)
         const seconds = Number(ts / 1_000_000n) / 1000
 
-        this.promHistogram.observe(labels, Number(seconds))
+        this.promHistogram.observe(labels, seconds)
     }
 
     recordTimer(rawLabels: Partial<M>): (labels?: Partial<M>) => number {
@@ -96,7 +96,7 @@ export class Counter<M extends LabelsType<M>> {
         labelNames: Extract<KeysOfUnion<M>, string>[] = [],
         help?: string,
         options?: MetricOptions<M>,
-        private readonly customLabelsValidate?: CustomLabelsValidate<M>,
+        private readonly customLabelsValidate: CustomLabelsValidate<M> | undefined = undefined,
     ) {
         const { onCollect, registry: customRegistry } = options || {}
         const registry = customRegistry || client.register
@@ -149,7 +149,7 @@ export class Timer<M extends LabelsType<M>> {
         name: string,
         labelNames: Extract<KeysOfUnion<M>, string>[] = [],
         help?: string,
-        private readonly customLabelsValidate?: CustomLabelsValidate<M>,
+        private readonly customLabelsValidate: CustomLabelsValidate<M> | undefined = undefined,
     ) {
         const existedMetric = client.register.getSingleMetric(name)
         if (existedMetric && existedMetric instanceof client.Gauge) {
@@ -185,9 +185,13 @@ export class Timer<M extends LabelsType<M>> {
 }
 
 export class MetricsService implements OnInit, OnDestroy {
-    pushGatewayRegistry = new client.Registry()
+    pushGatewayRegistry: client.Registry = new client.Registry()
 
-    totalRequestMetric = new Counter<TotalRequestsLabelsMap>('requests_total', totalRequestsAllowedFields, 'Total requests made by service')
+    totalRequestMetric: Counter<TotalRequestsLabelsMap> = new Counter<TotalRequestsLabelsMap>(
+        'requests_total',
+        totalRequestsAllowedFields,
+        'Total requests made by service',
+    )
 
     totalTimerMetric: Histogram<TotalRequestsLabelsMap>
 
@@ -273,12 +277,20 @@ export class MetricsService implements OnInit, OnDestroy {
     async onDestroy(): Promise<void> {
         await this.push()
 
-        return await new Promise((resolve, reject) => {
-            if (!this.server) {
-                return resolve()
-            }
+        if (!this.server) {
+            return
+        }
 
-            this.server.close((err) => (err ? reject(err) : resolve()))
+        const server = this.server
+
+        return await new Promise((resolve, reject) => {
+            server.close((err) => {
+                if (err) {
+                    reject(err)
+                } else {
+                    resolve()
+                }
+            })
         })
     }
 

@@ -1,19 +1,20 @@
 {
     "extends": "../tsconfig.json",
     "compilerOptions": {
-        "baseUrl": "../",
         "types": ["vite/client", "vitest/globals", "node"],
         "module": "ESNext",
         "moduleResolution": "Bundler",
+        "isolatedDeclarations": false,
         "isolatedModules": true,
         "paths": {
-            "@services/*": ["src/services/*"],
-            "@interfaces/*": ["src/interfaces/*"],
-            "@src/*": ["src/*"],
-            "@tests/*": ["tests/*"]
+            "@services/*": ["../src/services/*"],
+            "@interfaces/*": ["../src/interfaces/*"],
+            "@src/*": ["../src/*"],
+            "@tests/*": ["./*"]
         },
         "noEmit": true,
-        "strict": true
+        "strict": true,
+        "rootDir": "../"
     },
     "include": ["./**/*", "../vitest.config.mts"]
 }

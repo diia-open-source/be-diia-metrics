@@ -1,26 +1,33 @@
 {
     "name": "@diia-inhouse/diia-metrics",
-    "version": "6.5.40",
+    "version": "7.1.0",
+    "type": "module",
     "description": "package to export prometheus metrics",
     "main": "dist/index.js",
-    "types": "dist/types/index.d.ts",
+    "types": "dist/index.d.ts",
+    "exports": {
+        ".": {
+            "types": "./dist/index.d.ts",
+            "default": "./dist/index.js"
+        },
+        "./package.json": "./package.json"
+    },
     "repository": "https://github.com/diia-open-source/be-diia-metrics",
     "author": "Diia",
-    "license": "SEE LICENSE IN LICENSE.md",
     "files": [
         "dist"
     ],
     "engines": {
-        "node": ">=22"
+        "node": ">=24"
     },
     "scripts": {
         "prebuild": "rimraf dist",
-        "build": "tsc",
-        "build-watch": "tsc --watch",
-        "prepare": "ts-patch install -s && npm run build",
+        "build": "tsdown",
+        "build-watch": "tsdown --watch",
+        "prepare": "npm run build",
         "semantic-release": "semantic-release",
-        "lint": "eslint . && prettier --check .",
-        "lint-fix": "eslint . --fix && prettier --write .",
+        "lint": "oxlint && oxfmt --check .",
+        "lint-fix": "oxlint --fix && oxfmt .",
         "lint:lockfile": "lockfile-lint --path package-lock.json --allowed-hosts registry.npmjs.org --validate-https",
         "test": "vitest run",
         "test:watch": "vitest watch",
@@ -33,30 +40,31 @@
         "prom-client": "15.1.3"
     },
     "peerDependencies": {
-        "@diia-inhouse/errors": ">=1.10.0",
-        "@diia-inhouse/types": ">=6.30.0"
+        "@diia-inhouse/errors": ">=2.0.0",
+        "@diia-inhouse/types": ">=13.1.0"
     },
     "devDependencies": {
-        "@diia-inhouse/configs": "6.1.1",
-        "@diia-inhouse/diia-logger": "3.20.14",
-        "@diia-inhouse/eslint-config": "8.8.2",
-        "@diia-inhouse/test": "7.3.24",
-        "@types/node": "25.3.3",
-        "@vitest/coverage-v8": "4.0.18",
-        "@vitest/ui": "4.0.18",
-        "eslint": "9.36.0",
-        "eslint-plugin-prettier": "5.5.4",
-        "lockfile-lint": "4.14.1",
+        "@diia-inhouse/configs": "7.0.0",
+        "@diia-inhouse/diia-logger": "4.2.0",
+        "@diia-inhouse/oxc-config": "1.10.0",
+        "@diia-inhouse/test": "8.2.0",
+        "@types/node": "25.6.2",
+        "@vitest/coverage-v8": "4.1.5",
+        "@vitest/ui": "4.1.5",
+        "lockfile-lint": "5.0.0",
         "madge": "8.0.0",
-        "nock": "14.0.10",
-        "prettier": "3.6.2",
-        "rimraf": "6.0.1",
-        "semantic-release": "24.2.9",
-        "type-fest": "5.0.1",
+        "nock": "14.0.15",
+        "oxfmt": "0.48.0",
+        "oxlint": "1.63.0",
+        "oxlint-tsgolint": "0.22.1",
+        "rimraf": "6.1.3",
+        "semantic-release": "25.0.3",
+        "tsdown": "0.22.0",
+        "type-fest": "5.6.0",
         "typescript": "5.9.3",
         "vite-tsconfig-paths": "6.1.1",
-        "vitest": "4.0.18",
-        "vitest-mock-extended": "3.1.0"
+        "vitest": "4.1.5",
+        "vitest-mock-extended": "4.0.0"
     },
     "release": {
         "extends": "@diia-inhouse/configs/dist/semantic-release/package",
@@ -67,8 +75,8 @@
     "commitlint": {
         "extends": "@diia-inhouse/configs/dist/commitlint"
     },
-    "prettier": "@diia-inhouse/eslint-config/prettier",
     "madge": {
         "tsConfig": "./tsconfig.json"
-    }
+    },
+    "license": "SEE LICENSE IN LICENSE.md"
 }

@@ -1,6 +1,6 @@
 import * as client from 'prom-client'
 
-import { CustomLabelsValidate, KeysOfUnion, LabelsType, MetricOptions } from '../interfaces/index'
+import { CustomLabelsValidate, KeysOfUnion, LabelsType, MetricOptions } from '../interfaces/index.js'
 
 export class Observer<M extends LabelsType<M>> {
     private readonly promObserver: client.Gauge
@@ -10,7 +10,7 @@ export class Observer<M extends LabelsType<M>> {
         labelNames: Extract<KeysOfUnion<M>, string>[] = [],
         help?: string,
         options?: MetricOptions<M>,
-        private readonly customLabelsValidate?: CustomLabelsValidate<M>,
+        private readonly customLabelsValidate: CustomLabelsValidate<M> | undefined = undefined,
     ) {
         const { onCollect, registry: customRegistry } = options || {}
         const registry = customRegistry || client.register

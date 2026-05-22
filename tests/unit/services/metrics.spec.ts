@@ -1,4 +1,5 @@
 import * as http from 'node:http'
+import { setTimeout as sleep } from 'node:timers/promises'
 
 import { register } from 'prom-client'
 import { Mock } from 'vitest'
@@ -11,12 +12,12 @@ import { DurationMs, HttpStatusCode } from '@diia-inhouse/types'
 import { MetricsConfig, MetricsService, RequestMechanism, RequestStatus, TotalRequestsLabelsMap } from '../../../src'
 import { makeRequest } from '../../../src/utils/index'
 
-vi.mock('node:http', () => {
-    const actualModule = vi.importActual('node:http')
+vi.mock('node:http', async () => {
+    const actualModule = await vi.importActual<typeof http>('node:http')
 
     return {
         ...actualModule,
-        createServer: vi.fn(),
+        createServer: vi.fn<() => void>(),
     }
 })
 
@@ -27,23 +28,23 @@ vi.mock('../../../src/utils/index', async (importOriginal) => {
 
     return {
         ...(actual as object),
-        makeRequest: vi.fn(),
+        makeRequest: vi.fn<() => void>(),
     }
 })
 
 const makeRequestMock = vi.mocked(makeRequest)
 
 vi.mock('prom-client', () => ({
-    Counter: vi.fn(),
-    Gauge: vi.fn(),
-    Histogram: vi.fn(),
+    Counter: vi.fn<() => void>(),
+    Gauge: vi.fn<() => void>(),
+    Histogram: vi.fn<() => void>(),
     register: {
-        metrics: vi.fn(),
-        getSingleMetric: vi.fn(),
+        metrics: vi.fn<() => void>(),
+        getSingleMetric: vi.fn<() => void>(),
         contentType: 'text/plain; version=0.0.4; charset=utf-8',
     },
-    Registry: vi.fn(),
-    Pushgateway: vi.fn(),
+    Registry: vi.fn<() => void>(),
+    Pushgateway: vi.fn<() => void>(),
 }))
 
 describe('MetricsService', () => {
@@ -75,8 +76,8 @@ describe('MetricsService', () => {
         it('should start server', async () => {
             const metricsService: MetricsService = new MetricsService(loggerMock, defaultMetricsConfig, 'systemServiceName')
             const metrics = 'metrics'
-            const headerMock = vi.fn()
-            const endMock = vi.fn()
+            const headerMock = vi.fn<() => void>()
+            const endMock = vi.fn<() => void>()
 
             vi.mocked(register.metrics).mockResolvedValueOnce(metrics)
             ;(http.createServer as Mock).mockImplementationOnce((requestCallback) => {
@@ -92,13 +93,15 @@ describe('MetricsService', () => {
                 }, 0)
 
                 return {
-                    listen: vi.fn().mockImplementationOnce(async (_port, callback) => callback()),
+                    listen: vi
+                        .fn<(port: number, callback: () => void) => void>()
+                        .mockImplementationOnce(async (_port, callback) => callback()),
                 }
             })
 
             await expect(metricsService.startServer()).resolves.toBeUndefined()
 
-            await new Promise((resolve) => setTimeout(resolve, 10))
+            await sleep(10)
 
             expect(headerMock).toHaveBeenCalledWith('Content-Type', promContentType)
             expect(endMock).toHaveBeenCalledWith(expect.any(Buffer))
@@ -116,13 +119,13 @@ describe('MetricsService', () => {
                     {},
                     {
                         statusCode: undefined,
-                        setHeader: vi.fn(),
-                        end: vi.fn(),
+                        setHeader: vi.fn<() => void>(),
+                        end: vi.fn<() => void>(),
                     },
                 )
 
                 return {
-                    listen: vi.fn().mockImplementationOnce((_port, callback) => callback()),
+                    listen: vi.fn<(port: number, callback: () => void) => void>().mockImplementationOnce((_port, callback) => callback()),
                 }
             })
 
@@ -136,8 +139,8 @@ describe('MetricsService', () => {
         it('should get metrics from moleculer', async () => {
             const metricsService: MetricsService = new MetricsService(loggerMock, defaultMetricsConfig, 'systemServiceName')
             const metrics = ''
-            const headerMock = vi.fn()
-            const endMock = vi.fn()
+            const headerMock = vi.fn<() => void>()
+            const endMock = vi.fn<() => void>()
 
             vi.mocked(register.metrics).mockResolvedValueOnce(metrics)
             ;(http.createServer as Mock).mockImplementationOnce((requestCallback) => {
@@ -153,13 +156,15 @@ describe('MetricsService', () => {
                 }, 0)
 
                 return {
-                    listen: vi.fn().mockImplementationOnce(async (_port, callback) => callback()),
+                    listen: vi
+                        .fn<(port: number, callback: () => void) => void>()
+                        .mockImplementationOnce(async (_port, callback) => callback()),
                 }
             })
 
             await expect(metricsService.startServer()).resolves.toBeUndefined()
 
-            await new Promise((resolve) => setTimeout(resolve, 10))
+            await sleep(10)
 
             expect(headerMock).toHaveBeenCalledWith('Content-Type', promContentType)
             expect(endMock).toHaveBeenCalledWith(expect.any(Buffer))
@@ -169,8 +174,8 @@ describe('MetricsService', () => {
         it('should catch error taken from moleculer', async () => {
             const metricsService: MetricsService = new MetricsService(loggerMock, defaultMetricsConfig, 'systemServiceName')
             const metrics = ''
-            const headerMock = vi.fn()
-            const endMock = vi.fn()
+            const headerMock = vi.fn<() => void>()
+            const endMock = vi.fn<() => void>()
 
             vi.mocked(register.metrics).mockResolvedValueOnce(metrics)
             ;(http.createServer as Mock).mockImplementationOnce((requestCallback) => {
@@ -186,7 +191,9 @@ describe('MetricsService', () => {
                 }, 0)
 
                 return {
-                    listen: vi.fn().mockImplementationOnce(async (_port, callback) => callback()),
+                    listen: vi
+                        .fn<(port: number, callback: () => void) => void>()
+                        .mockImplementationOnce(async (_port, callback) => callback()),
                 }
             })
             const err = new Error('error')
@@ -195,7 +202,7 @@ describe('MetricsService', () => {
 
             await expect(metricsService.startServer()).resolves.toBeUndefined()
 
-            await new Promise((resolve) => setTimeout(resolve, 10))
+            await sleep(10)
 
             expect(headerMock).toHaveBeenCalledWith('Content-Type', promContentType)
             expect(endMock).toHaveBeenCalledWith(expect.any(Buffer))
@@ -218,7 +225,7 @@ describe('MetricsService', () => {
                 disabled: false,
             })
 
-            const listenFn = vi.fn().mockImplementation((_port, callback) => {
+            const listenFn = vi.fn<(port: number, callback: () => void) => void>().mockImplementation((_port, callback) => {
                 callback()
             })
 

@@ -1,4 +1,3 @@
-/* eslint-disable unicorn/no-useless-undefined */
 import * as client from 'prom-client'
 
 import { ErrorType } from '@diia-inhouse/errors'
@@ -11,9 +10,9 @@ import { Histogram } from '../../../src/services'
 
 vi.mock('prom-client', () => ({
     register: {
-        getSingleMetric: vi.fn(),
+        getSingleMetric: vi.fn<() => void>(),
     },
-    Histogram: vi.fn(),
+    Histogram: vi.fn<() => void>(),
 }))
 
 describe('Histogram', () => {
@@ -46,7 +45,7 @@ describe('Histogram', () => {
         const labels = { label3: 'value3', label4: 4 }
         const val = 100
 
-        existingHistogram.observe = vi.fn()
+        existingHistogram.observe = vi.fn<() => void>()
         const histogram = new Histogram('testHistogram')
 
         histogram.observe(labels, val)
@@ -61,7 +60,7 @@ describe('Histogram', () => {
         const labels = { label3: 'value3', label4: 4 }
         const val = 10000000n
 
-        existingHistogram.observe = vi.fn()
+        existingHistogram.observe = vi.fn<() => void>()
         const histogram = new Histogram('testHistogram')
 
         histogram.observeSeconds(labels, val)
@@ -75,7 +74,7 @@ describe('Histogram', () => {
         vi.spyOn(client.register, 'getSingleMetric').mockReturnValue(existingHistogram)
         const labels = { label3: 'value3', label4: 4 }
 
-        existingHistogram.startTimer = vi.fn()
+        existingHistogram.startTimer = vi.fn<typeof existingHistogram.startTimer>()
         const histogram = new Histogram('testHistogram')
 
         histogram.recordTimer(labels)
@@ -89,7 +88,7 @@ describe('Histogram', () => {
 
         vi.spyOn(client.register, 'getSingleMetric').mockReturnValue(existingHistogram)
 
-        new Histogram('testHistogram')
+        void new Histogram('testHistogram')
 
         expect(client.Histogram).toHaveBeenCalledWith(props)
     })
@@ -97,7 +96,7 @@ describe('Histogram', () => {
     it('should create a new histogram if it does not exist', () => {
         vi.spyOn(client.register, 'getSingleMetric').mockReturnValue(undefined)
 
-        new Histogram('testHistogram')
+        void new Histogram('testHistogram')
 
         expect(client.Histogram).toHaveBeenCalledWith({
             name: 'testHistogram',
@@ -111,7 +110,7 @@ describe('Histogram', () => {
 
         vi.spyOn(client.register, 'getSingleMetric').mockReturnValue(undefined)
 
-        new Histogram('customHistogram', ['label1', 'label2'], 'Custom help message', buckets)
+        void new Histogram('customHistogram', ['label1', 'label2'], 'Custom help message', buckets)
 
         expect(client.Histogram).toHaveBeenCalledWith({
             name: 'customHistogram',

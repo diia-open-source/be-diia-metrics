@@ -3,15 +3,16 @@
     "compilerOptions": {
         "outDir": "dist",
         "declarationDir": "dist/types",
-        "baseUrl": ".",
+        "isolatedDeclarations": true,
         "paths": {
-            "@services/*": ["src/services/*"],
-            "@interfaces/*": ["src/interfaces/*"],
-            "@src/*": ["src/*"],
-            "@tests/*": ["tests/*"]
+            "@services/*": ["./src/services/*"],
+            "@interfaces/*": ["./src/interfaces/*"],
+            "@src/*": ["./src/*"],
+            "@tests/*": ["./tests/*"]
         },
         "strict": true,
-        "skipLibCheck": true
+        "skipLibCheck": true,
+        "rootDir": "./src"
     },
     "include": ["src/**/*"]
 }
