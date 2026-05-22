@@ -266,7 +266,7 @@ export class MetricsService implements OnInit, OnDestroy {
                     try {
                         await this.push()
                     } catch (err) {
-                        this.logger.error('Failed to push metrics', { err })
+                        this.logger.error(`Failed to push metrics to ${this.metricsConfig.pushGateway.url}`, { err })
                     }
                 },
                 this.metricsConfig.pushGateway.intervalMs ?? DurationMs.Second * 30,

@@ -1,6 +1,6 @@
 {
     "name": "@diia-inhouse/diia-metrics",
-    "version": "7.1.0",
+    "version": "7.1.1",
     "type": "module",
     "description": "package to export prometheus metrics",
     "main": "dist/index.js",
