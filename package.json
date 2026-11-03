@@ -1,6 +1,6 @@
 {
     "name": "@diia-inhouse/diia-metrics",
-    "version": "7.1.168",
+    "version": "7.1.169",
     "type": "module",
     "description": "package to export prometheus metrics",
     "main": "dist/index.js",
@@ -44,8 +44,8 @@
         "@diia-inhouse/types": ">=13.1.0"
     },
     "devDependencies": {
-        "@diia-inhouse/configs": "7.2.3",
-        "@diia-inhouse/diia-logger": "4.7.41",
+        "@diia-inhouse/configs": "7.2.4",
+        "@diia-inhouse/diia-logger": "4.7.42",
         "@diia-inhouse/oxc-config": "2.1.7",
         "@diia-inhouse/test": "8.4.2",
         "@types/node": "25.6.2",
